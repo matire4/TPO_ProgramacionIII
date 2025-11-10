@@ -15,10 +15,5 @@ from server import app as flask_app  # noqa: E402
 fastapi_app = FastAPI()
 fastapi_app.mount("/", WSGIMiddleware(flask_app))
 
-
-def handler(request, context):
-    from mangum import Mangum
-
-    adapter = Mangum(fastapi_app)
-    return adapter(request, context)
+app = fastapi_app
 
