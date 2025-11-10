@@ -1,4 +1,5 @@
 Flask==3.0.0
 flask-cors==4.0.0
-vercel-python-wsgi
+fastapi==0.110.0
+mangum==0.17.0
 
