@@ -122,6 +122,22 @@ def estado_a_string(s: State) -> str:
     return json.dumps(s, sort_keys=True)
 
 
+def _resolve_data_path() -> str:
+    default_base = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        'data'
+    )
+    env_dir = os.environ.get('NUTSORT_DATA_DIR')
+    if env_dir:
+        return env_dir
+    if os.environ.get('VERCEL'):
+        tmp_dir = os.path.join('/tmp', 'nutsort_data')
+        os.makedirs(tmp_dir, exist_ok=True)
+        return tmp_dir
+    os.makedirs(default_base, exist_ok=True)
+    return default_base
+
+
 def cargar_estados_usados(archivo: str = None) -> Set[str]:
     """
     Carga el conjunto de estados ya generados desde un archivo JSON.
@@ -129,9 +145,7 @@ def cargar_estados_usados(archivo: str = None) -> Set[str]:
     Útil para evitar generar el mismo estado dos veces.
     """
     if archivo is None:
-        # Usar ruta relativa a la carpeta data
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        archivo = os.path.join(BASE_DIR, 'data', 'estados_usados.json')
+        archivo = os.path.join(_resolve_data_path(), 'estados_usados.json')
     
     if os.path.exists(archivo):
         with open(archivo, 'r', encoding='utf-8') as f:
@@ -143,8 +157,7 @@ def cargar_estados_usados(archivo: str = None) -> Set[str]:
 def guardar_estado_usado(s: State, archivo: str = None) -> None:
     """Guarda un estado en la lista de estados usados."""
     if archivo is None:
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        archivo = os.path.join(BASE_DIR, 'data', 'estados_usados.json')
+        archivo = os.path.join(_resolve_data_path(), 'estados_usados.json')
     
     estados = cargar_estados_usados(archivo)
     estados.add(estado_a_string(s))
