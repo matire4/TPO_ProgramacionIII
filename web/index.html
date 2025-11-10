@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nut Sort - Solucionador Visual</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔩 Nut Sort - Solucionador Visual</h1>
+        <p class="subtitle">Sistema de resolución con múltiples algoritmos y visualización paso a paso</p>
+
+        <div class="form-group">
+            <label for="algoritmo">Algoritmo de Resolución *</label>
+            <select id="algoritmo" onchange="cargarAlgoritmo()">
+                <option value="">Selecciona un algoritmo...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="numColores">Cantidad de Colores (2-15) *</label>
+            <input type="number" id="numColores" min="2" max="15" placeholder="Ej: 5" disabled>
+        </div>
+
+        <div class="form-group">
+            <label>Método:</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="manual" name="tipo" value="manual">
+                    <label for="manual" style="margin: 0; font-weight: normal; cursor: pointer;">Entrada Manual</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="aleatorio" name="tipo" value="aleatorio">
+                    <label for="aleatorio" style="margin: 0; font-weight: normal; cursor: pointer;">Generar Aleatorio</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="seccionManual" class="input-section">
+            <div class="info-box">
+                <strong>Instrucciones:</strong> Selecciona 5 tuercas por cada pila (de abajo hacia arriba). El buffer queda vacío automáticamente.
+            </div>
+            <div id="pilasContainer"></div>
+        </div>
+
+        <div id="seccionAleatorio" class="input-section">
+            <button class="btn-success" onclick="generarAleatorio()">🎲 Generar Estado Aleatorio</button>
+        </div>
+
+        <div id="errorMsg" class="error"></div>
+
+        <div class="button-group">
+            <button class="btn-secondary" onclick="limpiarFormulario()">Limpiar</button>
+            <button class="btn-primary" onclick="procesarEstado()">Validar y Mostrar</button>
+        </div>
+
+        <div id="resultado" class="resultado">
+            <h3>✅ Estado Generado</h3>
+            <div id="estadoVisual" class="estado-visual"></div>
+            <div id="solucionDisplay" style="display: none;">
+                <div id="solucionInfo" class="solucion-display"></div>
+                <div id="demoContainer" style="display: none;">
+                    <h4 style="margin-bottom: 15px;">🎬 Demostración Paso a Paso</h4>
+                    <div class="controles-demo">
+                        <button class="btn-info" id="btnInicial" onclick="irInicial()" disabled>⏮ Inicial</button>
+                        <button class="btn-info" id="btnAnterior" onclick="anteriorMovimiento()" disabled>◀ Anterior</button>
+                        <span class="movimiento-actual" id="movActual">Movimiento 0 de 0</span>
+                        <button class="btn-info" id="btnSiguiente" onclick="siguienteMovimiento()" disabled>Siguiente ▶</button>
+                        <button class="btn-info" id="btnFinal" onclick="irFinal()" disabled>Final ⏭</button>
+                    </div>
+                    <div id="demoVisual" class="estado-visual"></div>
+                    <div id="movimientosLista" class="movimientos-lista"></div>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button class="btn-primary" onclick="resolverEstado()" id="btnResolver">🔍 Resolver</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = (window.API_URL_OVERRIDE || `${window.location.origin}/api`).replace(/\/$/, '');
+        const COLORES_DISPONIBLES = [
+            {nombre: 'Rojo', codigo: '#FF0000', id: 'R'},
+            {nombre: 'Verde', codigo: '#00FF00', id: 'G'},
+            {nombre: 'Azul', codigo: '#0000FF', id: 'B'},
+            {nombre: 'Amarillo', codigo: '#FFFF00', id: 'Y'},
+            {nombre: 'Naranja', codigo: '#FFA500', id: 'O'},
+            {nombre: 'Violeta', codigo: '#8A2BE2', id: 'V'},
+            {nombre: 'Rosa', codigo: '#FF69B4', id: 'P'},
+            {nombre: 'Cyan', codigo: '#00FFFF', id: 'C'},
+            {nombre: 'Marrón', codigo: '#8B4513', id: 'M'},
+            {nombre: 'Gris', codigo: '#808080', id: 'S'},
+            {nombre: 'Lima', codigo: '#32CD32', id: 'L'},
+            {nombre: 'Turquesa', codigo: '#40E0D0', id: 'T'},
+            {nombre: 'Oro', codigo: '#FFD700', id: 'D'},
+            {nombre: 'Coral', codigo: '#FF7F50', id: 'A'},
+            {nombre: 'Índigo', codigo: '#4B0082', id: 'I'}
+        ];
+
+        let algoritmoSeleccionado = null;
+        let algoritmosDisponibles = [];
+        let numColores = 0;
+        let colores = [];
+        let estadoActual = null;
+        let solucionData = null;
+        let estadosSecuencia = [];
+        let movimientoActual = 0;
+
+        // Cargar algoritmos disponibles al iniciar
+        async function cargarAlgoritmos() {
+            try {
+                const response = await fetch(`${API_URL}/algoritmos`);
+                const data = await response.json();
+                if (data.success) {
+                    algoritmosDisponibles = data.algoritmos;
+                    const select = document.getElementById('algoritmo');
+                    select.innerHTML = '<option value="">Selecciona un algoritmo...</option>';
+                    data.algoritmos.forEach(alg => {
+                        const option = document.createElement('option');
+                        option.value = alg.id;
+                        option.textContent = `${alg.nombre} - ${alg.descripcion}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando algoritmos:', error);
+            }
+        }
+
+        function cargarAlgoritmo() {
+            const select = document.getElementById('algoritmo');
+            algoritmoSeleccionado = select.value;
+            const numColoresInput = document.getElementById('numColores');
+            const btnResolver = document.getElementById('btnResolver');
+            
+            if (algoritmoSeleccionado) {
+                numColoresInput.disabled = false;
+                const algoritmo = algoritmosDisponibles.find(a => a.id === algoritmoSeleccionado);
+                if (algoritmo && btnResolver) {
+                    btnResolver.textContent = `🔍 Resolver con ${algoritmo.nombre}`;
+                }
+                limpiarFormulario();
+            } else {
+                numColoresInput.disabled = true;
+                if (btnResolver) {
+                    btnResolver.textContent = '🔍 Resolver';
+                }
+            }
+        }
+
+        // Cargar algoritmos al iniciar
+        cargarAlgoritmos();
+
+        function getColorStyle(codigo) {
+            return `background-color: ${codigo};`;
+        }
+
+        function obtenerColorPorId(id) {
+            return COLORES_DISPONIBLES.find(c => c.id === id) || COLORES_DISPONIBLES[0];
+        }
+
+        function obtenerColorTexto(codigo) {
+            // Determinar si el color es claro u oscuro para el texto
+            const r = parseInt(codigo.substr(1, 2), 16);
+            const g = parseInt(codigo.substr(3, 2), 16);
+            const b = parseInt(codigo.substr(5, 2), 16);
+            const brillo = (r * 299 + g * 587 + b * 114) / 1000;
+            return brillo > 128 ? '#000000' : '#FFFFFF';
+        }
+
+        document.getElementById('numColores').addEventListener('input', function(e) {
+            const valor = parseInt(e.target.value);
+            if (valor >= 2 && valor <= 15) {
+                numColores = valor;
+                colores = COLORES_DISPONIBLES.slice(0, valor).map(c => c.id);
+                actualizarVista();
+            }
+        });
+
+        document.querySelectorAll('input[name="tipo"]').forEach(radio => {
+            radio.addEventListener('change', actualizarVista);
+        });
+
+        function actualizarVista() {
+            const tipo = document.querySelector('input[name="tipo"]:checked')?.value;
+            const seccionManual = document.getElementById('seccionManual');
+            const seccionAleatorio = document.getElementById('seccionAleatorio');
+
+            if (!numColores || !tipo) {
+                seccionManual.classList.remove('active');
+                seccionAleatorio.classList.remove('active');
+                return;
+            }
+
+            if (tipo === 'manual') {
+                seccionManual.classList.add('active');
+                seccionAleatorio.classList.remove('active');
+                generarCamposManuales();
+            } else {
+                seccionManual.classList.remove('active');
+                seccionAleatorio.classList.add('active');
+            }
+        }
+
+        function generarCamposManuales() {
+            const container = document.getElementById('pilasContainer');
+            const numPilas = numColores + 1;
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPilas; i++) {
+                const esBuffer = i === numPilas - 1;
+                const pilaDiv = document.createElement('div');
+                pilaDiv.className = 'pila-group';
+                pilaDiv.innerHTML = `
+                    <h3>${esBuffer ? `P${i} (Buffer - vacío)` : `P${i} - 5 tuercas (abajo→arriba)`}</h3>
+                    <div class="tupla-selects" id="pila${i}">
+                        ${!esBuffer ? Array.from({length: 5}, (_, j) => `
+                            <select id="p${i}t${j}" onchange="actualizarColorSelect(this); validarEntrada(this, ${i}, ${j})" style="background-color: #f0f0f0;">
+                                <option value="">-</option>
+                                ${colores.map(c => {
+                                    const color = obtenerColorPorId(c);
+                                    return `<option value="${c}" data-color="${color.codigo}" style="background-color: ${color.codigo};"></option>`;
+                                }).join('')}
+                            </select>
+                        `).join('') : '<p style="color: #666; font-style: italic;">Buffer vacío (automático)</p>'}
+                    </div>
+                `;
+                container.appendChild(pilaDiv);
+            }
+        }
+
+        function actualizarColorSelect(select) {
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const colorCodigo = selectedOption.getAttribute('data-color') || selectedOption.style.backgroundColor;
+                if (colorCodigo) {
+                    select.style.backgroundColor = colorCodigo;
+                } else {
+                    // Si no hay data-color, obtener el color del objeto
+                    const color = obtenerColorPorId(selectedOption.value);
+                    if (color) {
+                        select.style.backgroundColor = color.codigo;
+                    }
+                }
+            } else {
+                select.style.backgroundColor = '#f0f0f0';
+            }
+        }
+
+        function validarEntrada(select, pilaIndex, tuercaIndex) {
+            ocultarError();
+        }
+
+        async function generarAleatorio() {
+            if (!algoritmoSeleccionado) {
+                mostrarError('Primero selecciona un algoritmo');
+                return;
+            }
+            if (!numColores) {
+                mostrarError('Primero ingresa la cantidad de colores');
+                return;
+            }
+            mostrarError('🔄 Generando estado aleatorio...', true);
+            
+            try {
+                const response = await fetch(`${API_URL}/generar-aleatorio`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        algoritmo: algoritmoSeleccionado,
+                        colores: colores,
+                        numColores: numColores
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    estadoActual = data.estado;
+                    colores = data.colores;
+                    ocultarError();
+                    mostrarResultado(data.estado);
+                } else {
+                    mostrarError(data.error || 'Error al generar estado');
+                }
+            } catch (error) {
+                mostrarError('Error de conexión. ¿Servidor corriendo en http://localhost:5000?');
+            }
+        }
+
+        async function procesarEstado() {
+            if (!algoritmoSeleccionado) {
+                mostrarError('Primero selecciona un algoritmo');
+                return;
+            }
+            const tipo = document.querySelector('input[name="tipo"]:checked')?.value;
+            if (!numColores || !tipo) {
+                mostrarError('Completa todos los campos');
+                return;
+            }
+            if (tipo === 'manual') await procesarManual();
+            else mostrarError('Genera un estado aleatorio primero');
+        }
+
+        async function procesarManual() {
+            const numPilas = numColores + 1;
+            const estado = [];
+            for (let i = 0; i < numPilas - 1; i++) {
+                const pila = [];
+                for (let j = 0; j < 5; j++) {
+                    const select = document.getElementById(`p${i}t${j}`);
+                    const valor = select?.value;
+                    if (!valor) {
+                        mostrarError(`Pila P${i}: Falta completar la tuerca ${j + 1}`);
+                        return;
+                    }
+                    pila.push(valor);
+                }
+                estado.push(pila);
+            }
+            estado.push([]);
+            
+            mostrarError('🔄 Validando estado...', true);
+            const validacion = await validarEstadoConBackend(estado);
+            if (validacion.success && validacion.valido) {
+                estadoActual = estado;
+                ocultarError();
+                mostrarResultado(estado);
+            } else {
+                mostrarError(validacion.mensaje || 'Estado inválido');
+            }
+        }
+
+        async function validarEstadoConBackend(estado) {
+            try {
+                const response = await fetch(`${API_URL}/validar-estado`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        algoritmo: algoritmoSeleccionado,
+                        estado: estado,
+                        colores: colores
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                return {success: false, error: 'Error de conexión'};
+            }
+        }
+
+        function mostrarResultado(estado) {
+            document.getElementById('resultado').classList.add('active');
+            
+            // Limpiar solución anterior antes de mostrar nuevo resultado
+            document.getElementById('solucionDisplay').style.display = 'none';
+            document.getElementById('demoContainer').style.display = 'none';
+            document.getElementById('solucionInfo').innerHTML = '';
+            document.getElementById('demoVisual').innerHTML = '';
+            document.getElementById('movimientosLista').innerHTML = '';
+            document.getElementById('movActual').textContent = 'Movimiento 0 de 0';
+            
+            // Limpiar datos de solución anterior
+            solucionData = null;
+            estadosSecuencia = [];
+            movimientoActual = 0;
+            
+            dibujarEstadoVisual(estado, 'estadoVisual');
+        }
+
+        function dibujarEstadoVisual(estado, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            estado.forEach((pila, i) => {
+                const pilaDiv = document.createElement('div');
+                pilaDiv.className = 'pila-visual';
+                pilaDiv.innerHTML = `
+                    <div class="pila-titulo">P${i}${i === estado.length - 1 ? ' (Buffer)' : ''}</div>
+                    <div class="pila-column">
+                        ${pila.length > 0 ? pila.map(colorId => {
+                            const color = obtenerColorPorId(colorId);
+                            return `<div class="nut" style="${getColorStyle(color.codigo)}" title="${color.nombre}"></div>`;
+                        }).join('') : '<div style="color: #999; font-size: 11px; padding: 20px 5px; text-align: center;">Vacío</div>'}
+                    </div>
+                `;
+                container.appendChild(pilaDiv);
+            });
+            
+            // Actualizar colores de los selects existentes
+            setTimeout(() => {
+                estado.forEach((pila, i) => {
+                    if (i < estado.length - 1) { // No es el buffer
+                        pila.forEach((colorId, j) => {
+                            const select = document.getElementById(`p${i}t${j}`);
+                            if (select) {
+                                select.value = colorId;
+                                actualizarColorSelect(select);
+                            }
+                        });
+                    }
+                });
+            }, 100);
+        }
+
+        async function resolverEstado() {
+            if (!algoritmoSeleccionado) {
+                mostrarError('Primero selecciona un algoritmo');
+                return;
+            }
+            if (!estadoActual) {
+                mostrarError('No hay estado para resolver');
+                return;
+            }
+
+            const solucionDiv = document.getElementById('solucionDisplay');
+            const solucionInfo = document.getElementById('solucionInfo');
+            
+            // Limpiar solución anterior antes de resolver
+            solucionDiv.style.display = 'block';
+            solucionInfo.innerHTML = '<div style="text-align: center; padding: 20px;">🔄 Resolviendo...</div>';
+            document.getElementById('demoVisual').innerHTML = '';
+            document.getElementById('movimientosLista').innerHTML = '';
+            document.getElementById('demoContainer').style.display = 'none';
+            
+            // Limpiar datos anteriores
+            solucionData = null;
+            estadosSecuencia = [];
+            movimientoActual = 0;
+            
+            try {
+                const response = await fetch(`${API_URL}/resolver`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        algoritmo: algoritmoSeleccionado,
+                        estado: estadoActual,
+                        colores: colores,
+                        max_expansions: 500000
+                    })
+                });
+                
+                if (!response.ok) {
+                    // Intentar leer el error del servidor
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        errorData = {error: `Error HTTP ${response.status}: ${response.statusText}`};
+                    }
+                    throw new Error(errorData.error || `Error HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Error desconocido al resolver');
+                }
+
+                if (data.success) {
+                    let html = '';
+                    if (data.resuelto) {
+                        solucionData = data;
+                        estadosSecuencia = [estadoActual];
+                        construirSecuenciaEstados();
+                        movimientoActual = 0;
+                        
+                        html += `<div style="color: #28a745; font-weight: bold; margin-bottom: 10px;">✓ ${data.mensaje}</div>`;
+                        let statsHtml = `<div><strong>Movimientos:</strong> ${data.num_movimientos} | <strong>Expandidos:</strong> ${data.stats.expanded.toLocaleString()} | <strong>Profundidad:</strong> ${data.stats.max_depth}`;
+                        if (data.stats.pruned !== undefined) {
+                            statsHtml += ` | <strong>Podados:</strong> ${data.stats.pruned.toLocaleString()}`;
+                        }
+                        if (data.stats.mejor_cota !== undefined && data.stats.mejor_cota !== null) {
+                            statsHtml += ` | <strong>Mejor Cota:</strong> ${data.stats.mejor_cota}`;
+                        }
+                        statsHtml += '</div>';
+                        html += statsHtml;
+                        solucionInfo.innerHTML = html;
+                        
+                        document.getElementById('demoContainer').style.display = 'block';
+                        document.getElementById('solucionDisplay').style.display = 'block';
+                        actualizarDemo();
+                    } else {
+                        html += `<div style="color: #dc3545; font-weight: bold;">✗ ${data.mensaje}</div>`;
+                        let statsHtml = `<div>Expandidos: ${data.stats.expanded.toLocaleString()} | Profundidad: ${data.stats.max_depth}`;
+                        if (data.stats.pruned !== undefined) {
+                            statsHtml += ` | Podados: ${data.stats.pruned.toLocaleString()}`;
+                        }
+                        if (data.stats.mejor_cota !== undefined && data.stats.mejor_cota !== null) {
+                            statsHtml += ` | Mejor Cota: ${data.stats.mejor_cota}`;
+                        }
+                        statsHtml += '</div>';
+                        html += statsHtml;
+                        if (data.limite_alcanzado) {
+                            html += `<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">⚠️ Límite alcanzado. Intenta aumentar expansiones o probar otro estado.</div>`;
+                        }
+                        solucionInfo.innerHTML = html;
+                        document.getElementById('demoContainer').style.display = 'none';
+                    }
+                } else {
+                    solucionInfo.innerHTML = `<div style="color: #dc3545;">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error resolviendo:', error);
+                const errorMsg = error.message || 'Error de conexión';
+                solucionInfo.innerHTML = `<div style="color: #dc3545;">❌ Error: ${errorMsg}</div>`;
+            }
+        }
+
+        function construirSecuenciaEstados() {
+            let estadoActual = estadosSecuencia[0];
+            solucionData.solucion.forEach(mov => {
+                const nuevoEstado = JSON.parse(JSON.stringify(estadoActual));
+                nuevoEstado[mov[1]].push(nuevoEstado[mov[0]].pop());
+                estadosSecuencia.push(nuevoEstado);
+                estadoActual = nuevoEstado;
+            });
+        }
+
+        function actualizarDemo() {
+            const total = solucionData.solucion.length;
+            document.getElementById('movActual').textContent = `Movimiento ${movimientoActual} de ${total}`;
+            dibujarEstadoVisual(estadosSecuencia[movimientoActual], 'demoVisual');
+            
+            const listaMov = document.getElementById('movimientosLista');
+            listaMov.innerHTML = solucionData.solucion.map((mov, idx) => {
+                const activo = idx === movimientoActual - 1 ? 'movimiento-activo' : '';
+                return `<div class="${activo}" id="mov-item-${idx}">${idx + 1}. P${mov[0]} → P${mov[1]}</div>`;
+            }).join('');
+            
+            // Scroll suave al movimiento actual, solo si hay movimiento activo
+            setTimeout(() => {
+                if (movimientoActual > 0 && movimientoActual <= total) {
+                    const movimientoActivo = document.getElementById(`mov-item-${movimientoActual - 1}`);
+                    if (movimientoActivo) {
+                        movimientoActivo.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'nearest'
+                        });
+                    }
+                }
+            }, 50);
+            
+            // Actualizar estado de botones
+            document.getElementById('btnInicial').disabled = movimientoActual === 0;
+            document.getElementById('btnAnterior').disabled = movimientoActual === 0;
+            document.getElementById('btnSiguiente').disabled = movimientoActual >= total;
+            document.getElementById('btnFinal').disabled = movimientoActual >= total;
+        }
+
+        function irInicial() {
+            movimientoActual = 0;
+            actualizarDemo();
+        }
+
+        function irFinal() {
+            movimientoActual = solucionData.solucion.length;
+            actualizarDemo();
+        }
+
+        function anteriorMovimiento() {
+            if (movimientoActual > 0) {
+                movimientoActual--;
+                actualizarDemo();
+            }
+        }
+
+        function siguienteMovimiento() {
+            if (movimientoActual < solucionData.solucion.length) {
+                movimientoActual++;
+                actualizarDemo();
+            }
+        }
+
+        function mostrarError(mensaje, esInfo = false) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = mensaje;
+            errorDiv.classList.add('active');
+            errorDiv.style.background = esInfo ? '#d1ecf1' : '#f8d7da';
+            errorDiv.style.color = esInfo ? '#0c5460' : '#721c24';
+            errorDiv.style.borderLeftColor = esInfo ? '#0c5460' : '#dc3545';
+        }
+
+        function ocultarError() {
+            document.getElementById('errorMsg').classList.remove('active');
+        }
+
+        function limpiarFormulario() {
+            // No limpiar el algoritmo seleccionado
+            document.getElementById('numColores').value = '';
+            document.querySelectorAll('input[name="tipo"]').forEach(r => r.checked = false);
+            document.getElementById('pilasContainer').innerHTML = '';
+            document.getElementById('seccionManual').classList.remove('active');
+            document.getElementById('seccionAleatorio').classList.remove('active');
+            document.getElementById('resultado').classList.remove('active');
+            
+            // Limpiar visualizaciones
+            document.getElementById('estadoVisual').innerHTML = '';
+            document.getElementById('demoVisual').innerHTML = '';
+            document.getElementById('movimientosLista').innerHTML = '';
+            
+            // Limpiar solución anterior
+            document.getElementById('solucionDisplay').style.display = 'none';
+            document.getElementById('demoContainer').style.display = 'none';
+            document.getElementById('solucionInfo').innerHTML = '';
+            document.getElementById('movActual').textContent = 'Movimiento 0 de 0';
+            
+            ocultarError();
+            numColores = 0;
+            colores = [];
+            estadoActual = null;
+            solucionData = null;
+            estadosSecuencia = [];
+            movimientoActual = 0;
+        }
+    </script>
+</body>
+</html>

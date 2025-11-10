@@ -1,0 +1,389 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+}
+
+input[type="number"], select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.tupla-selects select:focus {
+    outline: none;
+    border-color: #ddd;
+    box-shadow: none;
+}
+
+.tupla-selects select:hover {
+    outline: none;
+    border-color: #ddd;
+    box-shadow: none;
+}
+
+.radio-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.input-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: none;
+}
+
+.input-section.active {
+    display: block;
+}
+
+.pila-group {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.pila-group h3 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.tupla-selects {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tupla-selects select {
+    width: 50px;
+    height: 50px;
+    font-size: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 3px solid #ddd;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: border-color 0.2s;
+}
+
+.tupla-selects select:hover {
+    border-color: #999;
+}
+
+.tupla-selects select option {
+    padding: 15px;
+    font-size: 0;
+    width: 100%;
+    height: 40px;
+    background-color: transparent;
+}
+
+.color-option {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* Visualización vertical tipo Nut Sort */
+.estado-visual {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.pila-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.pila-titulo {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.pila-column {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    min-height: 250px;
+    width: 42px;
+    padding: 8px 4px;
+    background: linear-gradient(to bottom, #ffffff 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 2px solid #adb5bd;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nut {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.nut:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.nut-moving {
+    animation: moveNut 0.5s ease-in-out;
+}
+
+@keyframes moveNut {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #5a6268;
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover:not(:disabled) {
+    background: #138496;
+}
+
+.resultado {
+    margin-top: 20px;
+    padding: 20px;
+    background: #e8f5e9;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+    display: none;
+}
+
+.resultado.active {
+    display: block;
+}
+
+.error {
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 5px;
+    border-left: 4px solid #dc3545;
+    display: none;
+}
+
+.error.active {
+    display: block;
+}
+
+.info-box {
+    background: #d1ecf1;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border-left: 4px solid #0c5460;
+    font-size: 14px;
+    color: #0c5460;
+}
+
+.solucion-display {
+    margin-top: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+}
+
+.controles-demo {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.controles-demo button {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.movimiento-actual {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 16px;
+    padding: 0 15px;
+}
+
+.movimientos-lista {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.movimiento-activo {
+    background: #fff3cd;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    .estado-visual {
+        gap: 10px;
+    }
+    
+    .nut {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .pila-column {
+        width: 40px;
+    }
+}
+

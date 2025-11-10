@@ -1,0 +1,40 @@
+Comparativa preliminar Backtracking vs Branch and Bound
+======================================================
+
+Instancias evaluadas (idénticas para ambos algoritmos):
+- bt/bnb_facil_3_colores
+- bt/bnb_medio_4_colores
+- bt/bnb_dificil_5_colores
+- bt/bnb_casi_resuelto
+- bt/bnb_insoluble_conteo_invalido
+
+Resumen tabular
+---------------
+
+| Caso                        | BT: expandidos | BT: tiempo (s) | B&B: expandidos | B&B: podados | B&B: tiempo (s) |
+|----------------------------|----------------|----------------|-----------------|--------------|-----------------|
+| fácil 3 colores            | 26             | 0.000736       | 71              | 6            | 0.003426        |
+| medio 4 colores            | 34             | 0.001050       | 104             | 5            | 0.007356        |
+| difícil 5 colores          | 46             | 0.002042       | 171             | 10           | 0.015398        |
+| casi resuelto              | 8              | 0.000229       | 8               | 3            | 0.000389        |
+| insoluble (conteo inválido)| 5              | 0.000112       | 0               | 0            | 0.000030        |
+
+Promedios (sobre los 5 casos)
+-----------------------------
+- Backtracking:
+  - Nodos expandidos promedio: 23.8
+  - Tiempo promedio: 0.000834 s
+- Branch and Bound:
+  - Nodos expandidos promedio: 70.8
+  - Nodos podados promedio: 4.8
+  - Tiempo promedio: 0.005720 s
+
+Conclusiones preliminares
+-------------------------
+- En esta batería inicial (relativamente pequeña), Backtracking resulta más rápido y explora menos nodos porque el espacio de búsqueda todavía es manejable.
+- Branch and Bound realiza más expansiones, pero conserva información útil:
+  - reporta podas y mejores cotas,
+  - evita explorar caminos redundantes cuando identifica inconsistencias globales (caso insoluble).
+- La potencia de B&B debería observarse mejor en instancias grandes o con heurísticas más específicas; en el informe conviene remarcar que la ventaja se espera al crecer la complejidad.
+- Para el informe final, se recomienda añadir instancias más desafiantes (p. ej., 6 colores, estados intencionalmente complejos) y/o mejorar la heurística de costos para evidenciar la mejora en ramas podadas y tiempo total.
+

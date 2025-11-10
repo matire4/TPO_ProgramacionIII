@@ -1,0 +1,132 @@
+Informe Borrador – Nut Sort (Backtracking vs Branch & Bound)
+===========================================================
+
+Este documento reúne en un solo lugar el contenido sugerido para el informe final.
+Incluye instrucciones para reproducir los experimentos, tablas con resultados y
+las principales conclusiones.
+
+--------------------------------------------------------------------------
+1. Backtracking
+--------------------------------------------------------------------------
+
+Descripción breve
+-----------------
+- Estrategia de búsqueda en profundidad con heurísticas H1/H2 para ordenar los
+  movimientos (color foco y prioridad de consolidación).
+- Prevención de ciclos usando un conjunto de estados visitados.
+- Métricas recolectadas: nodos expandidos, profundidad máxima y tiempo real.
+
+Reproducibilidad
+----------------
+```bash
+cd NutSort
+python -m experiments.run_backtracking_cases
+```
+
+Resultados representativos (5 instancias)
+-----------------------------------------
+
+| Caso                     | Resuelto | Movimientos | Expandidos | Profundidad | Tiempo (s) |
+|--------------------------|----------|-------------|------------|-------------|------------|
+| bt_facil_3_colores       | Sí       | 25          | 26         | 25          | 0.000736   |
+| bt_medio_4_colores       | Sí       | 33          | 34         | 33          | 0.001050   |
+| bt_dificil_5_colores     | Sí       | 45          | 46         | 45          | 0.002042   |
+| bt_casi_resuelto         | Sí       | 7           | 8          | 7           | 0.000229   |
+| bt_insoluble_invalido    | No       | —           | 5          | 4           | 0.000112   |
+
+Estadísticas resumidas:
+- Tiempo promedio: **0.000834 s**
+- Nodos expandidos promedio: **23.8**
+
+--------------------------------------------------------------------------
+2. Branch & Bound
+--------------------------------------------------------------------------
+
+Descripción breve
+-----------------
+- Búsqueda best-first con cola de prioridad (`f = g + h`) y cálculo de cotas
+  inferiores basado en asignaciones de colores destino.
+- Cinco estrategias de poda (cota vs mejor solución, estados imposibles, revisitas
+  con peor costo, etc.).
+- Métricas adicionales: nodos podados y mejor cota alcanzada.
+
+Reproducibilidad
+----------------
+```bash
+cd NutSort
+python -m experiments.run_branch_and_bound_cases
+```
+
+Resultados representativos (mismas 5 instancias)
+------------------------------------------------
+
+| Caso                     | Resuelto | Movimientos | Expandidos | Podados | Profundidad | Tiempo (s) |
+|--------------------------|----------|-------------|------------|---------|-------------|------------|
+| bnb_facil_3_colores      | Sí       | 25          | 71         | 6       | 25          | 0.003426   |
+| bnb_medio_4_colores      | Sí       | 33          | 104        | 5       | 33          | 0.007356   |
+| bnb_dificil_5_colores    | Sí       | 45          | 171        | 10      | 45          | 0.015398   |
+| bnb_casi_resuelto        | Sí       | 4           | 8          | 3       | 4           | 0.000389   |
+| bnb_insoluble_invalido   | No       | —           | 0          | 0       | 0           | 0.000030   |
+
+Estadísticas resumidas:
+- Tiempo promedio: **0.005720 s**
+- Nodos expandidos promedio: **70.8**
+- Nodos podados promedio: **4.8**
+
+--------------------------------------------------------------------------
+3. Comparación global (50 casos)
+--------------------------------------------------------------------------
+
+Generación y métricas agregadas
+-------------------------------
+```bash
+cd NutSort
+python -m experiments.run_batch_comparison       # Genera 50 casos (30 solubles, 10 insolubles, 10 profundos)
+python -m experiments.generar_graficos           # Requiere pandas + matplotlib
+```
+- Datos crudos: `experiments/resultados_batch.csv`
+- Gráficos exportados en `experiments/plots/`
+
+Promedios globales (50 instancias)
+----------------------------------
+
+| Métrica                     | Backtracking | Branch & Bound | Diferencia (BnB - BT) |
+|-----------------------------|--------------|----------------|-----------------------|
+| Casos resueltos             | 40 / 50      | 40 / 50        | —                     |
+| Movimientos promedio        | 2.10         | **1.45**       | **-0.65**             |
+| Tiempo promedio (s)         | 0.000119     | 0.000130       | +0.000010             |
+| Nodos expandidos promedio   | 4.7          | **2.8**        | **-2.0**              |
+| Nodos podados promedio      | 0.0          | **0.8**        | **+0.8**              |
+| Casos con límite alcanzado  | 0            | 0              | —                     |
+
+Insights destacados
+-------------------
+1. **Calidad vs velocidad**: Backtracking sigue siendo el más veloz, pero Branch & Bound entrega soluciones más cortas y explora menos nodos gracias a las podas.
+2. **Información adicional**: BnB reporta en promedio ~0.8 podas por caso y mantiene la mejor cota encontrada, lo que respalda la optimalidad.
+3. **Casos insolubles**: Los 10 estados inconsistentes se identifican sin agotar el límite de expansiones; ambos algoritmos responden “sin solución”.
+4. **Casos profundos**: En mezclas largas (35-55 movimientos previos), BnB siempre poda al menos una rama, demostrando ventaja en espacios de búsqueda grandes.
+
+--------------------------------------------------------------------------
+4. Material para el informe
+--------------------------------------------------------------------------
+- Usa las tablas anteriores para redactar las secciones de resultados.
+- Incluye capturas de la interfaz web resolviendo un caso soluble e insoluble.
+- Inserta los gráficos de `experiments/plots/` (tiempos, podas, promedios por algoritmo).
+- Añade diagramas de flujo simples (p. ej. draw.io) para explicar el pipeline de BT y BnB.
+- Finaliza con una reflexión: “Backtracking es ideal cuando sólo importa una respuesta rápida; Branch & Bound sacrifica microsegundos a cambio de soluciones más eficientes y justificables.”
+
+--------------------------------------------------------------------------
+5. Deploy en Vercel (opcional para la demostración)
+--------------------------------------------------------------------------
+- Frontend (`web/`) se publica como estático.
+- API Flask se expone como función serverless usando `vercel-python-wsgi`.
+```bash
+cd NutSort
+pip install vercel
+vercel login
+vercel                                   # primer deploy (elige proyecto)
+vercel --prod                            # deploy producción
+```
+- El archivo `vercel.json` y `api/server.py` ya están configurados.
+- Si el backend queda en otro dominio, define `window.API_URL_OVERRIDE` antes de cargar `web/index.html` o edita el script para apuntar al endpoint correspondiente.
+
