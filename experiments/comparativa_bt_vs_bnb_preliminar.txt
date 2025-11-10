@@ -38,3 +38,4 @@ Conclusiones preliminares
 - La potencia de B&B debería observarse mejor en instancias grandes o con heurísticas más específicas; en el informe conviene remarcar que la ventaja se espera al crecer la complejidad.
 - Para el informe final, se recomienda añadir instancias más desafiantes (p. ej., 6 colores, estados intencionalmente complejos) y/o mejorar la heurística de costos para evidenciar la mejora en ramas podadas y tiempo total.
 
+

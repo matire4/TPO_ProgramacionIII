@@ -130,3 +130,4 @@ vercel --prod                            # deploy producción
 - El archivo `vercel.json` y `api/server.py` ya están configurados.
 - Si el backend queda en otro dominio, define `window.API_URL_OVERRIDE` antes de cargar `web/index.html` o edita el script para apuntar al endpoint correspondiente.
 
+
